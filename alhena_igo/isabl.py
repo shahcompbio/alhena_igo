@@ -1,6 +1,7 @@
 import alhenaloader
 import os
 import isabl_cli as ii
+import logging
 
 
 APP_VERSION = '1.0.0'
@@ -9,24 +10,27 @@ os.environ['ISABL_CLIENT_ID'] = '1'
 VERSION = "0.0.1"
 
 
-def load(aliquot_id, host, port, views):
-    [alignment, hmmcopy, annotation] = get_directories(id)
+def load(aliquot_id, host, port, views, verbose=False):
+    if verbose:
+        logger = logging.getLogger('alhena')
+        logger.setLevel(logging.INFO)
 
-    dashboard_id = get_id(id)
+    [alignment, hmmcopy, annotation] = get_directories(aliquot_id)
+
+    dashboard_id = get_id(aliquot_id)
 
     metadata = get_metadata(dashboard_id)
 
     print(f'Loading as ID {dashboard_id}')
 
     data = alhenaloader.load_qc_from_dirs(alignment, hmmcopy, annotation)
-    alhenaloader.load_data(data, dashboard_id, info.es)
 
     es = alhenaloader.ES(host, port)
 
+    alhenaloader.load_data(data, dashboard_id, es)
     es.load_record(
         metadata, dashboard_id, es.DASHBOARD_ENTRY_INDEX)
-
-    es.add_dashboard_to_views(dashboard_id, list(views))
+    es.add_dashboard_to_views(dashboard_id, views)
 
 
 def get_directories(target_aliquot: str):
