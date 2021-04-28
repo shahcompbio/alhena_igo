@@ -12,3 +12,4 @@ from .version import __version__, __release__  # noqa
 from .isabl import get_directories
 from .isabl import get_id
 from .isabl import get_metadata
+from .isabl import load
