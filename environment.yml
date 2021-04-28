@@ -1,0 +1,3 @@
+name: alhena_igo
+dependencies:
+  - python=3.6
