@@ -13,3 +13,4 @@ from .isabl import get_directories
 from .isabl import get_id
 from .isabl import get_metadata
 from .isabl import load
+from .isabl import clean

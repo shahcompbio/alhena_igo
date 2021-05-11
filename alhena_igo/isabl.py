@@ -10,6 +10,19 @@ os.environ['ISABL_CLIENT_ID'] = '1'
 VERSION = "0.0.1"
 
 
+def clean(aliquot_id, host, port, views=None):
+    dashboard_id = get_id(aliquot_id)
+
+    es = alhenaloader.ES(host, port)
+
+    alhenaloader.clean_data(dashboard_id, es)
+
+    es.delete_record_by_id(
+        es.DASHBOARD_ENTRY_INDEX, dashboard_id)
+
+    es.remove_dashboard_from_views(dashboard_id, views=views)
+
+
 def load(aliquot_id, host, port, views, verbose=False):
     if verbose:
         logger = logging.getLogger('alhena')
