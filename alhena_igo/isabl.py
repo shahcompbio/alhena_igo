@@ -61,9 +61,9 @@ def get_directories(target_aliquot: str):
 
 def get_id(target_aliquot: str):
     experiment = ii.get_instances("experiments", aliquot_id=target_aliquot)[0]
-    alignment = get_analyses('SCDNA-ALIGNMENT', VERSION, experiment.system_id)
+    annotation = get_analyses('SCDNA-ANNOTATION', VERSION, experiment.system_id)
 
-    return str(alignment.pk)
+    return str(annotation.pk)
 
 
 def get_metadata(pk: str):
