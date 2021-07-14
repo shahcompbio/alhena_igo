@@ -87,43 +87,43 @@ def cli(info: Info, verbose: int, host: str, port: int):
 
 @cli.command()
 @click.option('--id', help="Aliquot ID")
-@click.option('--dashboard', help="Dashboard ID")
+@click.option('--analysis', help="Analysis ID")
 @pass_info
-def clean(info: Info, id: str, dashboard: str):
-    """Delete indices/records associated with dashboard ID"""
-    assert id is not None or dashboard is not None,  "Please specify either aliquot or dashboard ID"
+def clean(info: Info, id: str, analysis: str):
+    """Delete indices/records associated with analysis ID"""
+    assert id is not None or analysis is not None,  "Please specify either aliquot or analysis ID"
 
-    dashboard_id = alhena_igo.isabl.get_id(id) if id is not None else dashboard
+    analysis_id = alhena_igo.isabl.get_id(id) if id is not None else analysis
 
-    alhenaloader.clean_data(dashboard_id, info.es)
+    alhenaloader.clean_data(analysis_id, info.es)
 
     info.es.delete_record_by_id(
-        info.es.DASHBOARD_ENTRY_INDEX, dashboard_id)
+        info.es.ANALYSIS_ENTRY_INDEX, analysis_id)
 
-    info.es.remove_dashboard_from_views(dashboard_id)
+    info.es.remove_analysis_from_views(analysis_id)
 
 
 @cli.command()
 @click.option('--id', help="Aliquot ID", required=True)
-@click.option('--view', '-v', 'views', multiple=True, default=["DLP"], help="Views to load dashboard into")
+@click.option('--project', '-p', 'projects', multiple=True, default=["DLP"], help="Projects to load analysis into")
 @pass_info
-def load(info: Info, id: str, views: List[str]):
+def load(info: Info, id: str, projects: List[str]):
 
     [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(id)
 
-    dashboard_id = alhena_igo.isabl.get_id(id)
+    analysis_id = alhena_igo.isabl.get_id(id)
 
-    metadata = alhena_igo.isabl.get_metadata(dashboard_id)
+    metadata = alhena_igo.isabl.get_metadata(analysis_id)
 
-    click.echo(f'Loading as ID {dashboard_id}')
+    click.echo(f'Loading as ID {analysis_id}')
 
     data = alhenaloader.load_qc_from_dirs(alignment, hmmcopy, annotation)
-    alhenaloader.load_data(data, dashboard_id, info.es)
+    alhenaloader.load_data(data, analysis_id, info.es)
 
     info.es.load_record(
-        metadata, dashboard_id, info.es.DASHBOARD_ENTRY_INDEX)
+        metadata, analysis_id, info.es.ANALYSIS_ENTRY_INDEX)
 
-    info.es.add_dashboard_to_views(dashboard_id, list(views))
+    info.es.add_analysis_to_projects(analysis_id, list(projects))
 
 
 @cli.command()

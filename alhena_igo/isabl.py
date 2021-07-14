@@ -10,40 +10,40 @@ os.environ['ISABL_CLIENT_ID'] = '1'
 VERSION = "0.0.1"
 
 
-def clean(aliquot_id, host, port, views=None):
-    dashboard_id = get_id(aliquot_id)
+def clean(aliquot_id, host, port, projects=None):
+    analysis_id = get_id(aliquot_id)
 
     es = alhenaloader.ES(host, port)
 
-    alhenaloader.clean_data(dashboard_id, es)
+    alhenaloader.clean_data(analysis_id, es)
 
     es.delete_record_by_id(
-        es.DASHBOARD_ENTRY_INDEX, dashboard_id)
+        es.ANALYSIS_ENTRY_INDEX, analysis_id)
 
-    es.remove_dashboard_from_views(dashboard_id, views=views)
+    es.remove_analysis_from_projects(analysis_id, projects=projects)
 
 
-def load(aliquot_id, host, port, views, verbose=False):
+def load(aliquot_id, host, port, projects, verbose=False):
     if verbose:
         logger = logging.getLogger('alhena')
         logger.setLevel(logging.INFO)
 
     [alignment, hmmcopy, annotation] = get_directories(aliquot_id)
 
-    dashboard_id = get_id(aliquot_id)
+    analysis_id = get_id(aliquot_id)
 
-    metadata = get_metadata(dashboard_id)
+    metadata = get_metadata(analysis_id)
 
-    print(f'Loading as ID {dashboard_id}')
+    print(f'Loading as ID {analysis_id}')
 
     data = alhenaloader.load_qc_from_dirs(alignment, hmmcopy, annotation)
 
     es = alhenaloader.ES(host, port)
 
-    alhenaloader.load_data(data, dashboard_id, es)
+    alhenaloader.load_data(data, analysis_id, es)
     es.load_record(
-        metadata, dashboard_id, es.DASHBOARD_ENTRY_INDEX)
-    es.add_dashboard_to_views(dashboard_id, views)
+        metadata, analysis_id, es.ANALYSIS_ENTRY_INDEX)
+    es.add_analysis_to_projects(analysis_id, projects)
 
 
 def get_directories(target_aliquot: str):
