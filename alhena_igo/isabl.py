@@ -3,6 +3,8 @@ import os
 import isabl_cli as ii
 import logging
 
+from scgenome.loaders.qc import load_qc_results
+
 
 APP_VERSION = '1.0.0'
 os.environ["ISABL_API_URL"] = 'https://isabl.shahlab.mskcc.org/api/v1/'
@@ -36,7 +38,7 @@ def load(aliquot_id, host, port, projects, verbose=False):
 
     print(f'Loading as ID {analysis_id}')
 
-    data = alhenaloader.load_qc_from_dirs(alignment, hmmcopy, annotation)
+    data = load_qc_results(alignment, hmmcopy, annotation)
 
     es = alhenaloader.ES(host, port)
 
