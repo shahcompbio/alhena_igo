@@ -24,6 +24,7 @@ import click
 from typing import List
 
 import alhenaloader
+from scgenome.loaders.qc import load_qc_results
 
 import alhena_igo.isabl
 from .__init__ import __version__
@@ -117,7 +118,7 @@ def load(info: Info, id: str, projects: List[str]):
 
     click.echo(f'Loading as ID {analysis_id}')
 
-    data = alhenaloader.load_qc_from_dirs(alignment, hmmcopy, annotation)
+    data = load_qc_results(alignment, hmmcopy, annotation)
     alhenaloader.load_data(data, analysis_id, info.es)
 
     info.es.load_record(
