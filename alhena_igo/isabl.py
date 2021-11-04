@@ -2,6 +2,7 @@ import alhenaloader
 import os
 import isabl_cli as ii
 import logging
+import pandas as pd
 
 from scgenome.loaders.qc import load_qc_results
 
@@ -12,61 +13,52 @@ os.environ['ISABL_CLIENT_ID'] = '1'
 VERSION = "0.0.1"
 
 
-def clean(aliquot_id, host, port, projects=None):
-    analysis_id = get_id(aliquot_id)
+# def clean(aliquot_id, host, port, projects=None):
+#     analysis_id = get_id(aliquot_id)
 
-    es = alhenaloader.ES(host, port)
+#     es = alhenaloader.ES(host, port)
 
-    alhenaloader.clean_data(analysis_id, es)
+#     alhenaloader.clean_data(analysis_id, es)
 
-    es.delete_record_by_id(
-        es.ANALYSIS_ENTRY_INDEX, analysis_id)
+#     es.delete_record_by_id(
+#         es.ANALYSIS_ENTRY_INDEX, analysis_id)
 
-    es.remove_analysis_from_projects(analysis_id, projects=projects)
+#     es.remove_analysis_from_projects(analysis_id, projects=projects)
 
 
-def load(aliquot_id, host, port, projects, verbose=False):
-    if verbose:
-        logger = logging.getLogger('alhena')
-        logger.setLevel(logging.INFO)
+# def load(aliquot_id, host, port, projects, verbose=False):
+#     if verbose:
+#         logger = logging.getLogger('alhena')
+#         logger.setLevel(logging.INFO)
 
-    [alignment, hmmcopy, annotation] = get_directories(aliquot_id)
+#     [alignment, hmmcopy, annotation] = get_directories(aliquot_id)
 
-    analysis_id = get_id(aliquot_id)
+#     analysis_id = get_id(aliquot_id)
 
-    metadata = get_metadata(analysis_id)
+#     metadata = get_metadata(analysis_id)
 
-    print(f'Loading as ID {analysis_id}')
+#     print(f'Loading as ID {analysis_id}')
 
-    data = load_qc_results(alignment, hmmcopy, annotation)
+#     data = load_qc_results(alignment, hmmcopy, annotation)
 
-    es = alhenaloader.ES(host, port)
+#     es = alhenaloader.ES(host, port)
 
-    alhenaloader.load_data(data, analysis_id, es)
-    es.load_record(
-        metadata, analysis_id, es.ANALYSIS_ENTRY_INDEX)
-    es.add_analysis_to_projects(analysis_id, projects)
+#     alhenaloader.load_data(data, analysis_id, es)
+#     es.load_record(
+#         metadata, analysis_id, es.ANALYSIS_ENTRY_INDEX)
+#     es.add_analysis_to_projects(analysis_id, projects)
 
 
 def get_directories(target_aliquot: str):
     """Return alignment, hmmcopy, and annotation directory paths based off aliquot ID"""
 
-    experiment = ii.get_instances("experiments", aliquot_id=target_aliquot)[0]
-
-    alignment = get_analyses('SCDNA-ALIGNMENT', VERSION, experiment.system_id)
-    hmmcopy = get_analyses('SCDNA-HMMCOPY', VERSION, experiment.system_id)
-    annotation = get_analyses(
+    experiment = ii.get_experiments(aliquot_id=target_aliquot)[0]
+    alignment = get_analysis('SCDNA-ALIGNMENT', VERSION, experiment.system_id)
+    hmmcopy = get_analysis('SCDNA-HMMCOPY', VERSION, experiment.system_id)
+    annotation = get_analysis(
         'SCDNA-ANNOTATION', VERSION, experiment.system_id)
 
     return [alignment["storage_url"], hmmcopy["storage_url"], annotation["storage_url"]]
-
-
-def get_id(target_aliquot: str):
-    experiment = ii.get_instances("experiments", aliquot_id=target_aliquot)[0]
-    annotation = get_analyses('SCDNA-ANNOTATION', VERSION, experiment.system_id)
-
-    return str(annotation.pk)
-
 
 def get_metadata(pk: str):
     """Return metadata object given target aliquot ID"""
@@ -74,23 +66,53 @@ def get_metadata(pk: str):
     analysis = ii.get_instance("analyses", int(pk))
     data = analysis["targets"][0]
 
-    return {
-        "dashboard_id": pk,
-        "jira_id": pk,
-        "sample_id": data["sample"]["identifier"],
-        "library_id": data["library_id"],
-        "description": data["aliquot_id"]
-    }
+    dashboard_id = pk
+    library_id = data["library_id"]
+    sample_id = data["sample"]["identifier"]
+    description = data["aliquot_id"]
+
+    additional_metadata = {}
+
+    metadata_record = alhenaloader.process_analysis_entry(dashboard_id, library_id, sample_id, description, additional_metadata)
+    return metadata_record
+    
+
+def aliquot_to_pk(aliquot_id):
+    experiment = ii.get_experiments(aliquot_id=aliquot_id)[0]
+    annotation = get_analysis('SCDNA-ANNOTATION', VERSION, experiment.system_id)
+
+    return str(annotation.pk)
 
 
-def get_analyses(app, version, exp_system_id):
+def get_analysis(app, version, exp_system_id):
     """Return analysis record corresponding to system ID"""
 
-    analyses = ii.get_instances(
-        'analyses',
+    analyses = ii.get_analyses(
         application__name=app,
         application__version=version,
         targets__system_id=exp_system_id
     )
-    assert len(analyses) == 1
-    return analyses[0]
+    if len(analyses) == 1:
+        return analyses[0]
+
+    return None
+
+
+def get_ids_from_isabl(project_pk):
+    experiments = ii.get_experiments(
+    projects__pk=project_pk,
+    technique__name='Single Cell DNA Seq',
+    status='SUCCEEDED',
+)
+    data = []
+    for experiment in experiments:
+        annotation = get_analysis("SCDNA-ANNOTATION", VERSION, experiment.system_id)
+        if annotation is not None:
+            data.append({                'system_id': experiment.system_id,
+                'sample': experiment.sample.identifier,
+                'aliquot': experiment.aliquot_id,
+                "dashboard_id": str(annotation.pk)
+                })
+    
+    return data
+

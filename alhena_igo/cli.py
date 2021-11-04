@@ -94,14 +94,10 @@ def clean(info: Info, id: str, analysis: str):
     """Delete indices/records associated with analysis ID"""
     assert id is not None or analysis is not None,  "Please specify either aliquot or analysis ID"
 
-    analysis_id = alhena_igo.isabl.get_id(id) if id is not None else analysis
+    analysis_id = alhena_igo.isabl.aliquot_to_pk(id) if id is not None else analysis
 
-    alhenaloader.clean_data(analysis_id, info.es)
+    alhenaloader.clean_analysis(analysis_id, info.es)
 
-    info.es.delete_record_by_id(
-        info.es.ANALYSIS_ENTRY_INDEX, analysis_id)
-
-    info.es.remove_analysis_from_views(analysis_id)
 
 
 @cli.command()
@@ -119,12 +115,38 @@ def load(info: Info, id: str, projects: List[str]):
     click.echo(f'Loading as ID {analysis_id}')
 
     data = load_qc_results(alignment, hmmcopy, annotation)
-    alhenaloader.load_data(data, analysis_id, info.es)
+    alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es)
 
-    info.es.load_record(
-        metadata, analysis_id, info.es.ANALYSIS_ENTRY_INDEX)
 
-    info.es.add_analysis_to_projects(analysis_id, list(projects))
+@cli.command()
+@click.option('--alhena', 'alhena', help='Projects to load into', multiple=True, default=[])
+@click.option('--isabl', help="Project PK from Isabl to pull from", required=True)
+@pass_info
+def load_project(info: Info, alhena: List[str], isabl: str):
+    projects = list(set(list(alhena) + ["DLP"]))
+
+    isabl_records = alhena_igo.isabl.get_ids_from_isabl(isabl)
+    isabl_pks = [record['dashboard_id'] for record in isabl_records]
+    alhena_analyses = [record['dashboard_id'] for record in info.es.get_analyses()]
+
+    diff = list(set(isabl_pks) - set(alhena_analyses))
+
+    for analysis_id in diff: 
+        print("====== " + analysis_id)
+        alhenaloader.clean_analysis(analysis_id, info.es)
+
+        aliquot_id = [record['aliquot'] for record in isabl_records if record['dashboard_id'] == analysis_id][0]
+
+        [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(aliquot_id)
+        metadata = alhena_igo.isabl.get_metadata(analysis_id)
+
+        click.echo(f'Loading as ID {analysis_id}')
+
+        data = load_qc_results(alignment, hmmcopy, annotation)
+        alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es)
+
+    for project in projects:
+        info.es.add_analyses_to_project(project, isabl_pks)
 
 
 @cli.command()
