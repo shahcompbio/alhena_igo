@@ -106,7 +106,7 @@ def clean(info: Info, id: str, analysis: str):
 @pass_info
 def load(info: Info, id: str, projects: List[str]):
 
-    [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(id)
+    [alignment, hmmcopy] = alhena_igo.isabl.get_directories(id)
 
     analysis_id = alhena_igo.isabl.get_id(id)
 
@@ -114,7 +114,8 @@ def load(info: Info, id: str, projects: List[str]):
 
     click.echo(f'Loading as ID {analysis_id}')
 
-    data = load_qc_results(alignment, hmmcopy, annotation)
+    data = load_qc_results(alignment, hmmcopy)
+
     alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es)
 
 
@@ -137,12 +138,11 @@ def load_project(info: Info, alhena: List[str], isabl: str):
 
         aliquot_id = [record['aliquot'] for record in isabl_records if record['dashboard_id'] == analysis_id][0]
 
-        [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(aliquot_id)
+        [alignment, hmmcopy] = alhena_igo.isabl.get_directories(aliquot_id)
         metadata = alhena_igo.isabl.get_metadata(analysis_id)
 
         click.echo(f'Loading as ID {analysis_id}')
-
-        data = load_qc_results(alignment, hmmcopy, annotation)
+        data = load_qc_results(alignment, hmmcopy)
         alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es)
 
     for project in projects:

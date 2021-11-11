@@ -8,8 +8,6 @@ from scgenome.loaders.qc import load_qc_results
 
 
 APP_VERSION = '1.0.0'
-os.environ["ISABL_API_URL"] = 'https://isabl.shahlab.mskcc.org/api/v1/'
-os.environ['ISABL_CLIENT_ID'] = '1'
 VERSION = "0.0.1"
 
 
@@ -53,12 +51,11 @@ def get_directories(target_aliquot: str):
     """Return alignment, hmmcopy, and annotation directory paths based off aliquot ID"""
 
     experiment = ii.get_experiments(aliquot_id=target_aliquot)[0]
-    alignment = get_analysis('SCDNA-ALIGNMENT', VERSION, experiment.system_id)
-    hmmcopy = get_analysis('SCDNA-HMMCOPY', VERSION, experiment.system_id)
-    annotation = get_analysis(
-        'SCDNA-ANNOTATION', VERSION, experiment.system_id)
+    alignment = get_analysis('MONDRIAN-ALIGNMENT', VERSION, experiment.system_id)
+    hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
 
-    return [alignment["storage_url"], hmmcopy["storage_url"], annotation["storage_url"]]
+    return [alignment["storage_url"], hmmcopy["storage_url"]]
+
 
 def get_metadata(pk: str):
     """Return metadata object given target aliquot ID"""
@@ -79,9 +76,9 @@ def get_metadata(pk: str):
 
 def aliquot_to_pk(aliquot_id):
     experiment = ii.get_experiments(aliquot_id=aliquot_id)[0]
-    annotation = get_analysis('SCDNA-ANNOTATION', VERSION, experiment.system_id)
+    hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
 
-    return str(annotation.pk)
+    return str(hmmcopy.pk)
 
 
 def get_analysis(app, version, exp_system_id):
@@ -100,19 +97,19 @@ def get_analysis(app, version, exp_system_id):
 
 def get_ids_from_isabl(project_pk):
     experiments = ii.get_experiments(
-    projects__pk=project_pk,
-    technique__name='Single Cell DNA Seq',
-    status='SUCCEEDED',
-)
+        projects__pk=project_pk,
+        technique__name='Single Cell DNA Seq',
+    )
     data = []
     for experiment in experiments:
-        annotation = get_analysis("SCDNA-ANNOTATION", VERSION, experiment.system_id)
-        if annotation is not None:
-            data.append({                'system_id': experiment.system_id,
+        hmmcopy = get_analysis("MONDRIAN-HMMCOPY", VERSION, experiment.system_id)
+        if hmmcopy is not None:
+            data.append({
+                'system_id': experiment.system_id,
                 'sample': experiment.sample.identifier,
                 'aliquot': experiment.aliquot_id,
-                "dashboard_id": str(annotation.pk)
-                })
+                "dashboard_id": str(hmmcopy.pk)
+            })
     
     return data
 
