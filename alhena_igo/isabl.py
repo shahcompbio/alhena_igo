@@ -87,7 +87,8 @@ def get_analysis(app, version, exp_system_id):
     analyses = ii.get_analyses(
         application__name=app,
         application__version=version,
-        targets__system_id=exp_system_id
+        targets__system_id=exp_system_id,
+        status='SUCCEEDED',
     )
     if len(analyses) == 1:
         return analyses[0]
@@ -108,7 +109,7 @@ def get_ids_from_isabl(project_pk):
                 'system_id': experiment.system_id,
                 'sample': experiment.sample.identifier,
                 'aliquot': experiment.aliquot_id,
-                "dashboard_id": str(hmmcopy.pk)
+                "dashboard_id": str(hmmcopy.pk),
             })
     
     return data
