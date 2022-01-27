@@ -49,7 +49,7 @@ VERSION = "0.0.1"
 
 def get_directories(target_aliquot: str):
     """Return alignment, hmmcopy, and annotation directory paths based off aliquot ID"""
-
+    print('>>>>', target_aliquot)
     experiment = ii.get_experiments(aliquot_id=target_aliquot)[0]
     alignment = get_analysis('MONDRIAN-ALIGNMENT', VERSION, experiment.system_id)
     hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
@@ -94,6 +94,17 @@ def get_analysis(app, version, exp_system_id):
         return analyses[0]
 
     return None
+
+
+def get_id(aliquot_id):
+    hmmcopy = ii.get_analyses(
+        application__name='MONDRIAN-HMMCOPY',
+        status='SUCCEEDED',
+        targets__aliquot_id=aliquot_id,
+        application__version=VERSION,
+    )
+    assert len(hmmcopy) == 1
+    return str(hmmcopy[0].pk)
 
 
 def get_ids_from_isabl(project_pk):

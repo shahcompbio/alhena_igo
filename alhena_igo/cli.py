@@ -143,7 +143,7 @@ def load_project(info: Info, alhena: List[str], isabl: str):
 
         click.echo(f'Loading as ID {analysis_id}')
         data = load_qc_results(alignment, hmmcopy)
-        data['hmmcopy_metrics'].rename(columns={'clustering_order': 'order', 'condition': 'experimental_condition'}, inplace=True)
+
         alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es)
 
     for project in projects:
