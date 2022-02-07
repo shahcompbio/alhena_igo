@@ -1,14 +1,9 @@
-import alhenaloader
-import os
-import isabl_cli as ii
-import logging
-import pandas as pd
-
 from scgenome.loaders.qc import load_qc_results
-
-
-APP_VERSION = '1.0.0'
-VERSION = "0.0.1"
+import isabl_cli as ii
+import pandas as pd
+import alhenaloader
+import logging
+import os
 
 
 # def clean(aliquot_id, host, port, projects=None):
@@ -47,22 +42,18 @@ VERSION = "0.0.1"
 #     es.add_analysis_to_projects(analysis_id, projects)
 
 
-def get_directories(target_aliquot: str, framework: str):
+def get_directories(target_aliquot: str, framework: str, version: str):
     """Return alignment, hmmcopy, and annotation directory paths based off aliquot ID"""
     experiment = ii.get_experiments(aliquot_id=target_aliquot)[0]
-
-  
-    alignment = get_analysis('MONDRIAN-ALIGNMENT', VERSION, experiment.system_id)
-    hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
  
     if framework == 'mondrian':
-        alignment = get_analysis('MONDRIAN-ALIGNMENT', VERSION, experiment.system_id)
-        hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
+        alignment = get_analysis('MONDRIAN-ALIGNMENT', version, experiment.system_id)
+        hmmcopy = get_analysis('MONDRIAN-HMMCOPY', version, experiment.system_id)
         return [alignment["storage_url"], hmmcopy["storage_url"]]
     elif framework == 'scp':
-        alignment = get_analysis('SCDNA-ALIGNMENT', VERSION, experiment.system_id)
-        hmmcopy = get_analysis('SCDNA-HMMCOPY', VERSION, experiment.system_id)
-        annotation = get_analysis('SCDNA-ANNOTATION', VERSION, experiment.system_id)
+        alignment = get_analysis('SCDNA-ALIGNMENT', version, experiment.system_id)
+        hmmcopy = get_analysis('SCDNA-HMMCOPY', version, experiment.system_id)
+        annotation = get_analysis('SCDNA-ANNOTATION', version, experiment.system_id)
         return [alignment["storage_url"], hmmcopy["storage_url"], annotation["storage_url"]]
     else:
         raise Exception(f"Unknown framework '{framework}'")
@@ -83,24 +74,10 @@ def get_metadata(pk: str):
 
     metadata_record = alhenaloader.process_analysis_entry(dashboard_id, library_id, sample_id, description, additional_metadata)
     return metadata_record
-    
-
-def aliquot_to_pk(aliquot_id, framework):
-    experiment = ii.get_experiments(aliquot_id=aliquot_id)[0]
-
-    if framework == 'mondrian':
-        hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
-        return str(hmmcopy.pk)
-    elif framework == 'scp':
-        annotation = get_analysis('SCDNA-ANNOTATION', VERSION, experiment.system_id)
-        return str(annotation.pk)
-    else:
-        raise Exception(f"Unknown framework '{framework}'.")
 
 
 def get_analysis(app, version, exp_system_id):
     """Return analysis record corresponding to system ID"""
-
     analyses = ii.get_analyses(
         application__name=app,
         application__version=version,
@@ -113,7 +90,7 @@ def get_analysis(app, version, exp_system_id):
     return None
 
 
-def get_id(aliquot_id, framework):
+def get_id(aliquot_id, framework, version):
     app = ''
 
     if framework == 'mondrian':
@@ -127,13 +104,13 @@ def get_id(aliquot_id, framework):
         application__name=app,
         status='SUCCEEDED',
         targets__aliquot_id=aliquot_id,
-        application__version=VERSION,
+        application__version=version,
     )
     assert len(analysis) == 1
     return str(analysis[0].pk)
 
 
-def get_ids_from_isabl(project_pk, framework):
+def get_ids_from_isabl(project_pk, framework, version):
     experiments = ii.get_experiments(
         projects__pk=project_pk,
         technique__name='Single Cell DNA Seq',
@@ -149,7 +126,7 @@ def get_ids_from_isabl(project_pk, framework):
 
     data = []
     for experiment in experiments:
-        analysis = get_analysis(app, VERSION, experiment.system_id)
+        analysis = get_analysis(app, version, experiment.system_id)
         if analysis is not None:
             data.append({
                 'system_id': experiment.system_id,
