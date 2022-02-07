@@ -8,7 +8,7 @@ from scgenome.loaders.qc import load_qc_results
 
 
 APP_VERSION = '1.0.0'
-VERSION = "0.0.1"
+VERSION = "0.0.3"
 
 
 # def clean(aliquot_id, host, port, projects=None):
@@ -47,14 +47,25 @@ VERSION = "0.0.1"
 #     es.add_analysis_to_projects(analysis_id, projects)
 
 
-def get_directories(target_aliquot: str):
+def get_directories(target_aliquot: str, framework: str):
     """Return alignment, hmmcopy, and annotation directory paths based off aliquot ID"""
-    print('>>>>', target_aliquot)
     experiment = ii.get_experiments(aliquot_id=target_aliquot)[0]
+
+  
     alignment = get_analysis('MONDRIAN-ALIGNMENT', VERSION, experiment.system_id)
     hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
-
-    return [alignment["storage_url"], hmmcopy["storage_url"]]
+ 
+    if framework == 'mondrian':
+        alignment = get_analysis('MONDRIAN-ALIGNMENT', VERSION, experiment.system_id)
+        hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
+        return [alignment["storage_url"], hmmcopy["storage_url"]]
+    elif framework == 'scp':
+        alignment = get_analysis('SCDNA-ALIGNMENT', VERSION, experiment.system_id)
+        hmmcopy = get_analysis('SCDNA-HMMCOPY', VERSION, experiment.system_id)
+        annotation = get_analysis('SCDNA-ANNOTATION', VERSION, experiment.system_id)
+        return [alignment["storage_url"], hmmcopy["storage_url"], annotation["storage_url"]]
+    else:
+        raise Exception(f"Unknown framework '{framework}'")
 
 
 def get_metadata(pk: str):
@@ -74,11 +85,17 @@ def get_metadata(pk: str):
     return metadata_record
     
 
-def aliquot_to_pk(aliquot_id):
+def aliquot_to_pk(aliquot_id, framework):
     experiment = ii.get_experiments(aliquot_id=aliquot_id)[0]
-    hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
 
-    return str(hmmcopy.pk)
+    if framework == 'mondrian':
+        hmmcopy = get_analysis('MONDRIAN-HMMCOPY', VERSION, experiment.system_id)
+        return str(hmmcopy.pk)
+    elif framework == 'scp':
+        annotation = get_analysis('SCDNA-ANNOTATION', VERSION, experiment.system_id)
+        return str(annotation.pk)
+    else:
+        raise Exception(f"Unknown framework '{framework}'.")
 
 
 def get_analysis(app, version, exp_system_id):
@@ -96,31 +113,49 @@ def get_analysis(app, version, exp_system_id):
     return None
 
 
-def get_id(aliquot_id):
-    hmmcopy = ii.get_analyses(
-        application__name='MONDRIAN-HMMCOPY',
+def get_id(aliquot_id, framework):
+    app = ''
+
+    if framework == 'mondrian':
+        app = 'MONDRIAN-HMMCOPY'
+    elif framework == 'scp':
+        app = 'SCDNA-ANNOTATION'
+    else:
+        raise Exception(f"Unknown framework '{framework}'.")
+
+    analysis = ii.get_analyses(
+        application__name=app,
         status='SUCCEEDED',
         targets__aliquot_id=aliquot_id,
         application__version=VERSION,
     )
-    assert len(hmmcopy) == 1
-    return str(hmmcopy[0].pk)
+    assert len(analysis) == 1
+    return str(analysis[0].pk)
 
 
-def get_ids_from_isabl(project_pk):
+def get_ids_from_isabl(project_pk, framework):
     experiments = ii.get_experiments(
         projects__pk=project_pk,
         technique__name='Single Cell DNA Seq',
     )
+
+    app = ''
+    if framework == 'mondrian':
+        app = 'MONDRIAN-HMMCOPY'
+    elif framework == 'scp':
+        app = 'SCDNA-ANNOTATION'
+    else:
+        raise Exception(f"Unknown framework '{framework}'.")
+
     data = []
     for experiment in experiments:
-        hmmcopy = get_analysis("MONDRIAN-HMMCOPY", VERSION, experiment.system_id)
-        if hmmcopy is not None:
+        analysis = get_analysis(app, VERSION, experiment.system_id)
+        if analysis is not None:
             data.append({
                 'system_id': experiment.system_id,
                 'sample': experiment.sample.identifier,
                 'aliquot': experiment.aliquot_id,
-                "dashboard_id": str(hmmcopy.pk),
+                "dashboard_id": str(analysis.pk),
             })
     
     return data
