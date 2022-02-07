@@ -8,7 +8,7 @@ from scgenome.loaders.qc import load_qc_results
 
 
 APP_VERSION = '1.0.0'
-VERSION = "0.0.3"
+VERSION = "0.0.1"
 
 
 # def clean(aliquot_id, host, port, projects=None):

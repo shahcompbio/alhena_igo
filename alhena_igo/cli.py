@@ -106,7 +106,7 @@ def clean(info: Info, id: str, analysis: str):
 @click.option('--framework', '-f', type=click.Choice(['scp', 'mondrian']), help="Framework: scp or mondrian")
 @pass_info
 def load(info: Info, id: str, projects: List[str], framework: str):
-
+    analysis_id = alhena_igo.isabl.get_id(id, framework)
     click.echo(f'Loading as ID {analysis_id}')
 
     if framework == 'scp':
@@ -117,8 +117,6 @@ def load(info: Info, id: str, projects: List[str], framework: str):
         data = load_qc_results(alignment, hmmcopy)
     else:
         raise Exception(f"Unknown framework option '{framework}'")
-
-    analysis_id = alhena_igo.isabl.get_id(id, framework)
 
     metadata = alhena_igo.isabl.get_metadata(analysis_id)
 
