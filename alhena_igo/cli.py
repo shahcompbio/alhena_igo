@@ -87,44 +87,75 @@ def cli(info: Info, verbose: int, host: str, port: int):
 
 
 @cli.command()
-@click.option('--id', help="Aliquot ID")
-@click.option('--analysis', help="Analysis ID")
+@click.option('--analysis', help="Analysis ID", required=True)
 @pass_info
-def clean(info: Info, id: str, analysis: str):
+def clean(info: Info, analysis: str):
     """Delete indices/records associated with analysis ID"""
-    assert id is not None or analysis is not None,  "Please specify either aliquot or analysis ID"
+    alhenaloader.clean_analysis(analysis, info.es)
 
-    analysis_id = alhena_igo.isabl.get_id(id) if id is not None else analysis
-
-    alhenaloader.clean_data(analysis_id, info.es)
-
-    info.es.delete_record_by_id(
-        info.es.ANALYSIS_ENTRY_INDEX, analysis_id)
-
-    info.es.remove_analysis_from_views(analysis_id)
 
 
 @cli.command()
 @click.option('--id', help="Aliquot ID", required=True)
-@click.option('--project', '-p', 'projects', multiple=True, default=["DLP"], help="Projects to load analysis into")
+@click.option('--project', 'projects', multiple=True, default=["DLP"], help="Projects to load analysis into")
+@click.option('--framework', type=click.Choice(['scp', 'mondrian']), help="Framework: scp or mondrian")
+@click.option('--version', help="Isabl app version to load", required=True)
 @pass_info
-def load(info: Info, id: str, projects: List[str]):
+def load(info: Info, id: str, projects: List[str], framework: str, version: str):
+    analysis_id = alhena_igo.isabl.get_id(id, framework, version)
+    click.echo(f'Loading as ID {analysis_id}')
 
-    [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(id)
-
-    analysis_id = alhena_igo.isabl.get_id(id)
+    if framework == 'scp':
+        [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(id, framework, version)
+        data = load_qc_results(alignment, hmmcopy, annotation)
+    elif framework == 'mondrian':
+        [alignment, hmmcopy] = alhena_igo.isabl.get_directories(id, framework, version)
+        data = load_qc_results(alignment, hmmcopy)
+    else:
+        raise Exception(f"Unknown framework option '{framework}'")
 
     metadata = alhena_igo.isabl.get_metadata(analysis_id)
 
-    click.echo(f'Loading as ID {analysis_id}')
+    alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es, framework)
 
-    data = load_qc_results(alignment, hmmcopy, annotation)
-    alhenaloader.load_data(data, analysis_id, info.es)
 
-    info.es.load_record(
-        metadata, analysis_id, info.es.ANALYSIS_ENTRY_INDEX)
+@cli.command()
+@click.option('--alhena', 'alhena', help='Projects to load into', multiple=True, default=[])
+@click.option('--isabl', help="Project PK from Isabl to pull from", required=True)
+@click.option('--framework', type=click.Choice(['scp', 'mondrian']), help="Framework: scp or mondrian", required=True)
+@click.option('--version', help="Isabl app version to load", required=True)
+@pass_info
+def load_project(info: Info, alhena: List[str], isabl: str, framework:str, version: str):
+    projects = list(set(list(alhena) + ["DLP"]))
 
-    info.es.add_analysis_to_projects(analysis_id, list(projects))
+    isabl_records = alhena_igo.isabl.get_ids_from_isabl(isabl, framework, version)
+    isabl_pks = [record['dashboard_id'] for record in isabl_records]
+    alhena_analyses = [record['dashboard_id'] for record in info.es.get_analyses()]
+
+    diff = list(set(isabl_pks) - set(alhena_analyses))
+
+    for analysis_id in diff: 
+        alhenaloader.clean_analysis(analysis_id, info.es)
+
+        aliquot_id = [record['aliquot'] for record in isabl_records if record['dashboard_id'] == analysis_id][0]
+
+        click.echo(f'Loading as ID {analysis_id}')
+
+        if framework == 'mondrian':
+            [alignment, hmmcopy] = alhena_igo.isabl.get_directories(aliquot_id, framework, version)
+            data = load_qc_results(alignment, hmmcopy)
+        elif framework == 'scp':
+            [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(aliquot_id, framework, version)
+            data = load_qc_results(alignment, hmmcopy, annotation)
+        else:
+            raise Exception(f"Unknown framework '{framework}'.")
+
+        metadata = alhena_igo.isabl.get_metadata(analysis_id)
+
+        alhenaloader.load_analysis(analysis_id, data,  metadata, list(projects), info.es, framework)
+
+    for project in projects:
+        info.es.add_analyses_to_project(project, isabl_pks)
 
 
 @cli.command()

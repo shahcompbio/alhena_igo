@@ -50,8 +50,8 @@ setup(
     install_requires=[
         # Include dependencies here
         'click>=7.0,<8',
-        "alhenaloader @ git+https://github.com/shahcompbio/alhenaloader.git#egg=alhenaloader",
-        "scgenome @ git+https://github.com/shahcompbio/scgenome.git#egg=scgenome",
+        "alhenaloader @ git+https://github.com/shahcompbio/alhenaloader.git@main#egg=alhenaloader",
+        "scgenome @ git+https://github.com/shahcompbio/scgenome.git@master#egg=scgenome",
         "isabl_cli @ git+https://github.com/shahcompbio/isabl_cli.git#egg=isabl_cli"
     ],
     entry_points="""

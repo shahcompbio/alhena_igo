@@ -9,3 +9,4 @@ setuptools
 Sphinx
 tox
 twine
+csverve==0.2.2

@@ -1,36 +1,76 @@
 # alhena_igo
 
-Alhena loader for IGO
+Alhena loader for IGO.
 
-## Project Features
+This extends the existing alhenaloader module by providing methods that'll pull data as needed from Isabl to load.
 
-* [alhena_igo](http://alhena-igo.readthedocs.io/)
-* a starter [Click](http://click.pocoo.org/5/) command-line application
-* automated unit tests you can run with [pytest](https://docs.pytest.org/en/latest/)
-* a [Sphinx](http://www.sphinx-doc.org/en/master/) documentation project
 
-## Getting Started
+## Install
 
-The project's documentation contains a section to help you
-[get started](https://alhena-igo.readthedocs.io/en/latest/getting_started.html) as a developer or
-user of the library.
+You can install directly from pip:
 
-## Development Prerequisites
+```
+pip install -e git+https://github.com/shahcompbio/alhena_igo.git#egg=alhena_igo
+```
 
-If you're going to be working in the code (rather than just using the library), you'll want a few utilities.
+Or
 
-* [GNU Make](https://www.gnu.org/software/make/)
-* [Pandoc](https://pandoc.org/)
+Clone the repo
 
-## Resources
+```
+git clone https://github.com/shahcompbio/alhena_igo.git
+```
 
-Below are some handy resource links.
+In that directory, create a new venv
 
-* [Project Documentation](http://alhena-igo.readthedocs.io/)
-* [Click](http://click.pocoo.org/5/) is a Python package for creating beautiful command line interfaces in a composable way with as little code as necessary.
-* [Sphinx](http://www.sphinx-doc.org/en/master/) is a tool that makes it easy to create intelligent and beautiful documentation, written by Geog Brandl and licnsed under the BSD license.
-* [pytest](https://docs.pytest.org/en/latest/) helps you write better programs.
-* [GNU Make](https://www.gnu.org/software/make/) is a tool which controls the generation of executables and other non-source files of a program from the program's source files.
+```
+python3 -m venv venv
+```
+
+Then install the requirements
+
+```
+pip install -r requirements.txt
+```
+
+Then install the loader:
+
+```
+make build
+```
+
+## Commands
+
+To load a single analysis:
+
+```
+alhena_igo --host <host> load --id <aliquot ID> --project SPECTRUM --project DLP
+```
+
+
+
+To load an entire analysis over from Isabl
+
+```
+alhena_igo --host <host> load-project --alhena <project name in Alhena> --isabl <Project ID in Isabl>
+```
+
+Note that the above requires the project name to already exist in Alhena. If this is not the case, then run:
+
+```
+alhenaloader --host <host> add-project <name of project in Alhena>
+```
+
+
+To remove an analysis
+
+```
+alhena_igo --host <host> clean --id <aliquot ID>
+
+or
+
+alhena_igo --host <host> clean --analysis <Alhena ID>
+```
 
 
 ## Authors
