@@ -96,20 +96,19 @@ def clean(info: Info, analysis: str):
 
 
 @cli.command()
-@click.option('--id', help="Aliquot ID", required=True)
+@click.option('--analysis_id', help="MONDRIAN-HMMCOPY or SCDNA-ANNOTATION analysis primary key", required=True)
 @click.option('--project', 'projects', multiple=True, default=["DLP"], help="Projects to load analysis into")
 @click.option('--framework', type=click.Choice(['scp', 'mondrian']), help="Framework: scp or mondrian")
 @click.option('--version', help="Isabl app version to load", required=True)
 @pass_info
-def load(info: Info, id: str, projects: List[str], framework: str, version: str):
-    analysis_id = alhena_igo.isabl.get_id(id, framework, version)
+def load(info: Info, analysis_id: str, projects: List[str], framework: str, version: str):
     click.echo(f'Loading as ID {analysis_id}')
 
     if framework == 'scp':
-        [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(id, framework, version)
+        [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
         data = load_qc_results(alignment, hmmcopy, annotation)
     elif framework == 'mondrian':
-        [alignment, hmmcopy] = alhena_igo.isabl.get_directories(id, framework, version)
+        [alignment, hmmcopy] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
         data = load_qc_results(alignment, hmmcopy)
     else:
         raise Exception(f"Unknown framework option '{framework}'")
@@ -137,15 +136,13 @@ def load_project(info: Info, alhena: List[str], isabl: str, framework:str, versi
     for analysis_id in diff: 
         alhenaloader.clean_analysis(analysis_id, info.es)
 
-        aliquot_id = [record['aliquot'] for record in isabl_records if record['dashboard_id'] == analysis_id][0]
-
         click.echo(f'Loading as ID {analysis_id}')
 
         if framework == 'mondrian':
-            [alignment, hmmcopy] = alhena_igo.isabl.get_directories(aliquot_id, framework, version)
+            [alignment, hmmcopy] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
             data = load_qc_results(alignment, hmmcopy)
         elif framework == 'scp':
-            [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(aliquot_id, framework, version)
+            [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
             data = load_qc_results(alignment, hmmcopy, annotation)
         else:
             raise Exception(f"Unknown framework '{framework}'.")
