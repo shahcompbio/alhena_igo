@@ -255,7 +255,7 @@ def load_signals(info: Info, dashboard_id: str, sample_id: str, library_id: str,
         'gc_metrics': empty_gc_metrics,
     }
 
-    alhenaloader.load_data(data, dashboard_id, info.es)
+    alhenaloader.load_data(data, dashboard_id, info.es, framework='mondrian')
 
     info.es.load_record(
         metadata, dashboard_id, info.es.ANALYSIS_ENTRY_INDEX)
