@@ -49,12 +49,8 @@ setup(
     version=version,
     install_requires=[
         # Include dependencies here
-        "PyYAML==5.3.1",
-        "Click==7.0",
-        "numba==0.54.1",
-        "pyBigWig==0.3.17",
-        "alhenaloader @ git+https://github.com/shahcompbio/alhenaloader.git@main#egg=alhenaloader",
-        "isabl_cli @ git+https://github.com/shahcompbio/isabl_cli.git#egg=isabl_cli"
+        "alhenaloader @ git+https://github.com/shahcompbio/alhenaloader.git@v1.0.6#egg=alhenaloader",
+        "isabl_cli @ git+https://github.com/papaemmelab/isabl_cli.git#egg=isabl_cli"
     ],
     entry_points="""
     [console_scripts]
