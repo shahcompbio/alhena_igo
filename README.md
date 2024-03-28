@@ -7,35 +7,16 @@ This extends the existing alhenaloader module by providing methods that'll pull 
 
 ## Install
 
-You can install directly from pip:
-
-```
-pip install -e git+https://github.com/shahcompbio/alhena_igo.git#egg=alhena_igo
-```
-
-Or
-
-Clone the repo
 
 ```
 git clone https://github.com/shahcompbio/alhena_igo.git
-```
 
-In that directory, create a new venv
+conda create -n alhena python=3.9
 
-```
-python3 -m venv venv
-```
+source alhena
 
-Then install the requirements
+cd alhena_igo
 
-```
-pip install -r requirements.txt
-```
-
-Then install the loader:
-
-```
 make build
 ```
 

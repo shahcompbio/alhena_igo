@@ -42,19 +42,63 @@ import os
 #     es.add_analysis_to_projects(analysis_id, projects)
 
 
-def get_directories(target_aliquot: str, framework: str, version: str):
-    """Return alignment, hmmcopy, and annotation directory paths based off aliquot ID"""
-    experiment = ii.get_experiments(aliquot_id=target_aliquot)[0]
- 
+def get_analysis_filtered_by_assembly(experiment_sys_id, app_name, assembly):
+    """
+    Assembly filter does not work in Isabl for some reason, so fitlering in the
+    following manner.
+    """
+    analyses = ii.get_analyses(
+        application__name=app_name,
+        targets__system_id=experiment_sys_id,
+    )
+
+    for analysis in analyses:
+        if analysis.application.assembly.name == assembly:
+            return analysis
+
+    raise Exception(f"Unable to retrieve analyses for {experiment_sys_id} - {app_name} - {assembly}")
+
+
+def get_directories(analysis_pk: str, framework: str, version: str):
+    """
+    Return QC results for Mondrian or SCP based off MONDRIAN-HMMCOPY or SCDNA-ANNOTATION
+    analysis primary key.
+    """
+
     if framework == 'mondrian':
-        alignment = get_analysis('MONDRIAN-ALIGNMENT', version, experiment.system_id)
-        hmmcopy = get_analysis('MONDRIAN-HMMCOPY', version, experiment.system_id)
-        return [alignment["storage_url"], hmmcopy["storage_url"]]
+        hmmcopy = ii.get_analyses(pk=analysis_pk, application__name='MONDRIAN-HMMCOPY')
+        assert len(hmmcopy) == 1
+
+        assembly = hmmcopy[0].application.assembly.name
+
+        alignment = get_analysis_filtered_by_assembly(
+            hmmcopy[0].targets[0].system_id,
+            'MONDRIAN-ALIGNMENT',
+            assembly
+        )
+
+        return [alignment.storage_url, hmmcopy[0].storage_url]
+
     elif framework == 'scp':
-        alignment = get_analysis('SCDNA-ALIGNMENT', version, experiment.system_id)
-        hmmcopy = get_analysis('SCDNA-HMMCOPY', version, experiment.system_id)
-        annotation = get_analysis('SCDNA-ANNOTATION', version, experiment.system_id)
-        return [alignment["storage_url"], hmmcopy["storage_url"], annotation["storage_url"]]
+        annotation = ii.get_analyses(pk=analysis_pk, application__name='SCDNA-ANNOTATION')
+        assert len(annotation) == 1
+
+        assembly = annotation[0].application.assembly.name
+
+        hmmcopy = get_analysis_filtered_by_assembly(
+            annotation[0].targets[0].system_id,
+            'SCDNA-HMMCOPY',
+            assembly
+        )
+
+        alignment = get_analysis_filtered_by_assembly(
+            annotation[0].targets[0].system_id,
+            'SCDNA-ALIGNMENT',
+            assembly
+       	)
+        
+        return [alignment.storage_url, hmmcopy.storage_url, annotation[0].storage_url]
+
     else:
         raise Exception(f"Unknown framework '{framework}'")
 
