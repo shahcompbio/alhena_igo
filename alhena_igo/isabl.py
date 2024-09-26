@@ -61,8 +61,8 @@ def get_analysis_filtered_by_assembly(experiment_sys_id, app_name, assembly):
 
 def get_directories(analysis_pk: str, framework: str, version: str):
     """
-    Return QC results for Mondrian or SCP based off MONDRIAN-HMMCOPY or SCDNA-ANNOTATION
-    analysis primary key.
+    Return QC results for Mondrian (cromwell), Mondrain NF (nextflow) or SCP based off 
+    MONDRIAN-HMMCOPY, MONDRIAN-NF-QC or SCDNA-ANNOTATION analysis primary key.
     """
 
     if framework == 'mondrian':
@@ -78,6 +78,17 @@ def get_directories(analysis_pk: str, framework: str, version: str):
         )
 
         return [alignment.storage_url, hmmcopy[0].storage_url]
+
+    elif framework == 'mondrian_nf':
+        qc = ii.get_analyses(
+            pk=analysis_pk, 
+            application__name='MONDRIAN-NF-QC',
+            status='SUCCEEDED',
+        )
+        assert len(qc) == 1
+
+        # quick way to add support mondrian-nf using exisiting mondrian logic
+        return [qc[0].storage_url]
 
     elif framework == 'scp':
         annotation = ii.get_analyses(pk=analysis_pk, application__name='SCDNA-ANNOTATION')
@@ -139,6 +150,8 @@ def get_id(aliquot_id, framework, version):
 
     if framework == 'mondrian':
         app = 'MONDRIAN-HMMCOPY'
+    elif framework == 'mondrian-nf':
+        app = 'MONDRIAN-NF-QC'
     elif framework == 'scp':
         app = 'SCDNA-ANNOTATION'
     else:
@@ -163,6 +176,8 @@ def get_ids_from_isabl(project_pk, framework, version):
     app = ''
     if framework == 'mondrian':
         app = 'MONDRIAN-HMMCOPY'
+    elif framework == 'mondrian-nf':
+        app = 'MONDRIAN-NF-QC'
     elif framework == 'scp':
         app = 'SCDNA-ANNOTATION'
     else:
