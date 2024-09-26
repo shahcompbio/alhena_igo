@@ -49,7 +49,7 @@ setup(
     version=version,
     install_requires=[
         # Include dependencies here
-        "alhenaloader @ git+https://github.com/shahcompbio/alhenaloader.git@v1.0.6#egg=alhenaloader",
+        "alhenaloader @ git+https://github.com/shahcompbio/alhenaloader.git@v1.1.0#egg=alhenaloader",
         "isabl_cli @ git+https://github.com/papaemmelab/isabl_cli.git#egg=isabl_cli"
     ],
     entry_points="""

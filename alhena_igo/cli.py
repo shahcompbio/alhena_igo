@@ -98,7 +98,7 @@ def clean(info: Info, analysis: str):
 @cli.command()
 @click.option('--analysis_id', help="MONDRIAN-HMMCOPY or SCDNA-ANNOTATION analysis primary key", required=True)
 @click.option('--project', 'projects', multiple=True, default=["DLP"], help="Projects to load analysis into")
-@click.option('--framework', type=click.Choice(['scp', 'mondrian']), help="Framework: scp or mondrian")
+@click.option('--framework', type=click.Choice(['scp', 'mondrian', 'mondrian_nf']), help="Framework: scp, mondrian or mondrian_nf (nextflow)")
 @click.option('--version', help="Isabl app version to load", required=True)
 @pass_info
 def load(info: Info, analysis_id: str, projects: List[str], framework: str, version: str):
@@ -106,10 +106,25 @@ def load(info: Info, analysis_id: str, projects: List[str], framework: str, vers
 
     if framework == 'scp':
         [alignment, hmmcopy, annotation] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
-        data = load_qc_results(alignment, hmmcopy, annotation)
+        data = load_qc_results(
+            'scp', 
+            alignment_results_dir=alignment, 
+            hmmcopy_results_dir=hmmcopy,
+            annotation_results_dir=annotation
+        )
     elif framework == 'mondrian':
         [alignment, hmmcopy] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
-        data = load_qc_results(alignment, hmmcopy)
+        data = load_qc_results(
+            'mondrian', 
+            alignment_results_dir=alignment, 
+            hmmcopy_results_dir=hmmcopy
+        )
+    elif framework == 'mondrian_nf':
+        [qc] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
+        data = load_qc_results(
+            'mondrian_nf', 
+            qc_results_dir=qc
+        )
     else:
         raise Exception(f"Unknown framework option '{framework}'")
 
