@@ -59,6 +59,24 @@ def get_analysis_filtered_by_assembly(experiment_sys_id, app_name, assembly):
     raise Exception(f"Unable to retrieve analyses for {experiment_sys_id} - {app_name} - {assembly}")
 
 
+def get_isabl_cataloged_qc_results(analysis_pk: str, framework: str, version: str):
+    if framework == 'mondrian':
+        pass
+    
+    elif framework == 'mondrian_nf':
+        qc = ii.get_analyses(
+            pk=analysis_pk, 
+            application__name='MONDRIAN-QC',
+            status='SUCCEEDED',
+        )
+        
+        assert len(qc) == 1
+        
+        return qc[0].results
+    else:
+        raise Exception(f'Framework "{framework}" not configured.')
+    
+    
 def get_directories(analysis_pk: str, framework: str, version: str):
     """
     Return QC results for Mondrian (cromwell), Mondrain NF (nextflow) or SCP based off 
@@ -82,13 +100,16 @@ def get_directories(analysis_pk: str, framework: str, version: str):
     elif framework == 'mondrian_nf':
         qc = ii.get_analyses(
             pk=analysis_pk, 
-            application__name='MONDRIAN-NF-QC',
-            status='SUCCEEDED',
+            application__name='MONDRIAN-QC',
+            #status='SUCCEEDED',
         )
         assert len(qc) == 1
+        
+        
 
         # quick way to add support mondrian-nf using exisiting mondrian logic
         return [qc[0].storage_url]
+    
 
     elif framework == 'scp':
         annotation = ii.get_analyses(pk=analysis_pk, application__name='SCDNA-ANNOTATION')
