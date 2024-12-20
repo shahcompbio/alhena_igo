@@ -28,6 +28,8 @@ from scgenome.loaders.qc import load_qc_results
 
 import alhena_igo.isabl
 from .__init__ import __version__
+from alhena_igo import utils
+from alhena_igo.utils import process_data, _categorical_cols_align, _categorical_cols_hmmcopy, standard_hmmcopy_reads_cols
 
 LOGGING_LEVELS = {
     0: logging.NOTSET,
@@ -120,11 +122,16 @@ def load(info: Info, analysis_id: str, projects: List[str], framework: str, vers
             hmmcopy_results_dir=hmmcopy
         )
     elif framework == 'mondrian_nf':
-        [qc] = alhena_igo.isabl.get_directories(analysis_id, framework, version)
-        data = load_qc_results(
-            'mondrian_nf', 
-            qc_results_dir=qc
-        )
+        cataloged_results = alhena_igo.isabl.get_isabl_cataloged_qc_results(analysis_id, framework, version)
+        
+        data = {
+            'align_metrics':   process_data(cataloged_results['metrics'], _categorical_cols_align),
+            'gc_metrics':      process_data(cataloged_results['gc_metrics'], _categorical_cols_align),
+            'hmmcopy_reads':   process_data(cataloged_results['reads'], _categorical_cols_hmmcopy, usecols=standard_hmmcopy_reads_cols.copy()),
+            'hmmcopy_segs':    process_data(cataloged_results['segments'], _categorical_cols_hmmcopy),
+            'hmmcopy_metrics': process_data(cataloged_results['metrics'], _categorical_cols_hmmcopy),
+        }
+
     else:
         raise Exception(f"Unknown framework option '{framework}'")
 
